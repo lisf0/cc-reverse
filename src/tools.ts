@@ -1,37 +1,39 @@
 /*
  * @Date: 2021-01-20 17:54:37
  */
-const fs = require("fs")
-const path = require("path");
-const decodeUuid = require("./decode");
-const sizeOf = require('image-size');
-const stringRandom = require('string-random');
-const json2plist = require("./json2plist");
-const conf = require("./conf")
-module.exports = {
+import * as fs from "fs";
+import path from "path";
+import stringRandom from "string-random";
+import { Conf } from "./conf";
+import { decodeUuid } from "./decode";
+import json2plist from "./json2plist";
 
-    initialData: [],
-    fileList: [],
-    fileMap: new Map(),
-    cacheReadList: [],
-    cacheWriteList: [],
-    nodeData: {},
-    sceneAssets: [],
-    sceneAssetsMap: new Map(),
-    prefabs: [],
-    prefabsMap: new Map(),
-    spriteFrames: {},
-    spriteFramesMap: new Map(),
-    spriteAtlas: {},
-    spriteAtlasMap: new Map(),
-    audio: [],
-    audioMap: new Map(),
-    ttfMap: new Map(),
-    animation: [],
-    animationMap: new Map(),
-    pictureMap: new Map(),
-    rest: [],
-    isFirst: true,
+const sizeOf = require('image-size');
+
+export default new class {
+
+    initialData = [];
+    fileList: string[] = [];
+    fileMap = new Map();
+    cacheReadList: string[] = [];
+    cacheWriteList: string[] = [];
+    nodeData: any = {};
+    sceneAssets: string[] = [];
+    sceneAssetsMap = new Map();
+    prefabs = [];
+    prefabsMap = new Map();
+    spriteFrames = {};
+    spriteFramesMap = new Map();
+    spriteAtlas = {};
+    spriteAtlasMap = new Map();
+    audio: any[] = [];
+    audioMap = new Map();
+    ttfMap = new Map();
+    animation: any[] = [];
+    animationMap: Map<String, String> = new Map();
+    pictureMap = new Map();
+    rest = [];
+    isFirst = true;
     /**
      * @Description: 初始化数据
      */
@@ -41,22 +43,23 @@ module.exports = {
         //读取文件
         this.readFile(global.currPath, true).then(() => {
             this.convertToFile()
-            conf.init()
+            Conf.init()
         })
-    },
-    isEmptyObject(obj) {
+    }
+    isEmptyObject(obj: Object) {
         for (let key in obj) {
             return false
         };
         return true
-    },
+    }
+
     /**
      * @Description: 
      * @param {string} filePath //文件路径
      * @param {boolean} first //第一次
      * @param {boolean} isConvert //是否处理数据
      */
-    async readFile(filePath, first) {
+    async readFile(filePath: string, first: boolean) {
         const content = await fs.promises.readdir(filePath);
         for (let file of content) {
             let status = await fs.promises.stat(path.join(filePath, file));
@@ -69,25 +72,26 @@ module.exports = {
         }
         if (first) {
             if (!this.isEmptyObject(global.Settings["subpackages"])) {
-                let subpackagesPath = path.dirname(global.currPath) + String.raw `\subpackages`
+                let subpackagesPath = path.dirname(global.currPath) + String.raw`\subpackages`
                 await this.readFile(subpackagesPath, false);
             }
             for (let currPath of this.fileList) {
                 if (path.extname(currPath) === '.json') {
-                    const currFile = await fs.promises.readFile(currPath);
+                    const currFile = await fs.promises.readFile(currPath, "utf-8");
                     let key = path.basename(currPath).split('.')[0]
                     this.nodeData = JSON.parse(currFile)
                     this.process(key, JSON.parse(currFile))
                 }
             }
         }
-    },
+    }
+
     /**
      * @Description: 全局查找值
      * @param {object} data
      * @param {string} value
      */
-    globalFinding(data, key, value) {
+    globalFinding(data: any, key: string, value: string): any {
         for (let res of data) {
             if (Array.isArray(res)) {
                 return this.globalFinding(res, key, value)
@@ -95,12 +99,13 @@ module.exports = {
                 return res[key][value]
             }
         }
-    },
+    }
+
     /**
      * @Description: 处理数据
      * @param {object} data
      */
-    process(key, data) {
+    process(key: string, data: any) {
         if (global.Settings == "{}") {
             return
         }
@@ -109,7 +114,8 @@ module.exports = {
             writeData(res)
         })
         let count = 0
-        function writeData(data) {
+
+        function writeData(data: any) {
             //json资源
             if (typeof data === "object" && data["__type__"]) {
                 let type = data["__type__"]
@@ -128,7 +134,7 @@ module.exports = {
                             "subMetas": {}
                         }
                         if (that.fileMap.has(uuid)) {
-                            let writePath = String.raw `${name}`
+                            let writePath = String.raw`${name}`
                             let currPath = that.fileMap.get(uuid)
                             if (that.cacheWriteList.includes(`./project/assets/Texture/${writePath}`)) {
                                 writePath = name + `_${count++}` + path.extname(currPath)
@@ -256,7 +262,7 @@ module.exports = {
                                         "subMetas": {}
                                     }
                                     if (that.fileMap.has(uuid)) {
-                                        let writePath = String.raw `${name}`
+                                        let writePath = String.raw`${name}`
                                         let currPath = that.fileMap.get(uuid)
                                         if (that.cacheWriteList.includes(`./project/assets/Texture/${writePath}`)) {
                                             writePath = name + `_${count++}` + path.extname(currPath)
@@ -277,7 +283,8 @@ module.exports = {
                             that.animation.push(data[i])
                             for (let j in that.nodeData) {
                                 if (that.nodeData[j]["_name"] && that.nodeData[j]["_name"] == data[i]["_name"]) {
-                                    that.animationMap[filename] = decodeUuid(that.createLibrary(j, key))
+                                    that.animationMap.set(filename, decodeUuid(that.createLibrary(j, key)))
+
                                     let uuid = decodeUuid(that.createLibrary(j, key))
                                     let metaData = {
                                         "ver": "1.2.7",
@@ -317,7 +324,7 @@ module.exports = {
                                         that.writeFile(_mkdir, filename + ".meta", metaData)
                                         if (that.fileMap.has(uuid)) {
                                             let currPath = that.fileMap.get(uuid)
-                                            let writePath = String.raw `${name}${path.extname(currPath)}`
+                                            let writePath = String.raw`${name}${path.extname(currPath)}`
                                             if (that.cacheWriteList.includes(`./project/assets/Texture/${writePath}`)) {
                                                 writePath = name + `_${count++}` + path.extname(currPath)
                                             }
@@ -364,7 +371,7 @@ module.exports = {
                             }
                             if (that.fileMap.has(decodeUuid(data[i]["_texture"]["__uuid__"]))) {
                                 let currPath = that.fileMap.get(decodeUuid(data[i]["_texture"]["__uuid__"]))
-                                let writePath = String.raw `${name}${path.extname(currPath)}`
+                                let writePath = String.raw`${name}${path.extname(currPath)}`
                                 if (that.cacheWriteList.includes(`./project/assets/Texture/${writePath}`)) {
                                     writePath = name + `_${count++}` + path.extname(currPath)
                                 }
@@ -425,7 +432,7 @@ module.exports = {
                             for (let j in that.nodeData) {
                                 //确保同名和uuid相同
                                 if (that.nodeData[j]["content"] && that.nodeData[j]["content"]["texture"] == data[i]["content"]["texture"] && that.nodeData[j]["content"]["name"] == data[i]["content"]["name"]) {
-                                    uuid = decodeUuid(that.createLibrary(j, key))                                
+                                    uuid = decodeUuid(that.createLibrary(j, key))
                                     that.spriteFramesMap.set(uuid, data[i])
                                     temp.set(uuid, data[i])
                                     if (that.pictureMap.has(texture)) {
@@ -438,8 +445,8 @@ module.exports = {
                                     }
                                 }
                             }
-                            
-                            
+
+
 
                         }
                     }
@@ -447,9 +454,9 @@ module.exports = {
             }
 
         }
-        async function reveal(jsonObject) {
+        async function reveal(jsonObject: any) {
             for (let key in jsonObject) {
-                if (typeof (jsonObject[key]) == 'object' & jsonObject[key] != {}) {
+                if (typeof (jsonObject[key]) == 'object' && !that.isEmptyObject(jsonObject[key])) {
                     reveal(jsonObject[key]);
                 }
                 if (key == "__uuid__" && jsonObject[key]) {
@@ -458,8 +465,9 @@ module.exports = {
             }
             return jsonObject
         }
-    },
-    createLibrary(index, key) {
+    }
+
+    createLibrary(index: string, key: string) {
         if (global.Settings == "{}") {
             return
         }
@@ -473,15 +481,16 @@ module.exports = {
                 }
             }
         }
-    },
-    isFileExist(path) {
+    }
+    isFileExist(path: string) {
         try {
-            fs.accessSync(path, fs.F_OK);
+            fs.accessSync(path, fs.constants.F_OK);
         } catch (e) {
             return false;
         }
         return true;
-    },
+    }
+
     copyFile() {
         for (let i in this.cacheReadList) {
             fs.mkdirSync(path.dirname(this.cacheWriteList[i]), {
@@ -497,15 +506,16 @@ module.exports = {
                 console.log('writeStream error', error.message);
             })
         }
-    },
-    convertToSpriteAtlaFile(subMetas, filename, _uuid, plistWidth, plistHeight) {
-        let _subMetas = {}
-        let _spriteMap = {}
-        let frames = {}
-        let plistJson = {}
+    }
+
+    convertToSpriteAtlaFile(subMetas: any, filename: string, _uuid: string, plistWidth: number, plistHeight: number) {
+        let _subMetas: any = {}
+        let _spriteMap: any = {}
+        let frames: any = {}
+        let plistJson: any = {}
         let count = 0
-        pictureName = filename.split('.')[0]
-        let pictureSubMetas = {}
+        let pictureName = filename.split('.')[0]
+        let pictureSubMetas: any = {}
         pictureSubMetas[pictureName] = {
             "ver": "1.0.4",
             "uuid": decodeUuid(stringRandom(22)),
@@ -543,7 +553,7 @@ module.exports = {
             "subMetas": pictureSubMetas
         }
         this.writeFile("Picture", filename + ".meta", spriteMap)
-        subMetas.forEach(res => {
+        subMetas.forEach((res: any) => {
             let name = res["sprite"]["content"]["name"]
             let _spriteName = name + ".jpeg"
             if (_subMetas[_spriteName]) {
@@ -596,12 +606,13 @@ module.exports = {
 
         this.writeFile("Picture", filename.split(".")[0] + ".json", plistJson)
         this.writeFile("Picture", filename.split(".")[0] + '.plist' + ".meta", _spriteMap)
-        let fileName = String.raw `./project/assets/Picture/${filename.split(".")[0]}`
+        let fileName = String.raw`./project/assets/Picture/${filename.split(".")[0]}`
         json2plist.readJson(fileName)
         fs.unlinkSync(fileName + '.json')
-    },
-    convertToPictureFile(sprite, uuid, filename, pictureWidth, pictureHeight, filePath) {
-        let _subMetas = {}
+    }
+
+    convertToPictureFile(sprite: any, uuid: string, filename: string, pictureWidth: number, pictureHeight: number, filePath?: string) {
+        let _subMetas: any = {}
         let name = filename.split('.')[0]
 
         _subMetas[name] = {
@@ -645,7 +656,8 @@ module.exports = {
             writePath = filePath
         }
         this.writeFile(writePath, filename + ".meta", _spriteMap)
-    },
+    }
+
     convertToFile() {
         let count = 0
         //生成图集
@@ -653,9 +665,9 @@ module.exports = {
         this.spriteAtlasMap.forEach((spriteAtla, texture) => {
             if (spriteAtla["__type__"] == "cc.ParticleAsset") {
                 if (this.fileMap.has(texture)) {
-                    filename = spriteAtla["_name"]
+                    let filename = spriteAtla["_name"]
                     let currPath = this.fileMap.get(texture)
-                    let writePath = String.raw `${filename}${path.extname(currPath)}`
+                    let writePath = String.raw`${filename}${path.extname(currPath)}`
                     if (this.cacheWriteList.includes(`./project/assets/Picture/${writePath}`)) {
                         writePath = filename + `_${count++}` + path.extname(currPath)
                     }
@@ -681,12 +693,12 @@ module.exports = {
             if (this.fileMap.has(texture)) {
                 let currPath = this.fileMap.get(texture)
                 if (value.size > 1) {
-                    let subMetas = []
+                    let subMetas: any[] = []
                     let filename = path.basename(currPath).split('.')[0]
                     let plistWidth = sizeOf(currPath).width
                     let plistHeight = sizeOf(currPath).height
-                    value.forEach((res, uuid) => {
-                        let subMeta = {}
+                    value.forEach((res: any, uuid: string) => {
+                        let subMeta: any = {}
                         let _uuid = decodeUuid(stringRandom(22))
                         if (temp.has(texture)) {
                             _uuid = temp.get(texture)["texture"]
@@ -697,7 +709,7 @@ module.exports = {
                         subMeta["_uuid"] = uuid
                         subMetas.push(subMeta)
                     })
-                    let writePath = String.raw `${filename.split(".")[0]}${path.extname(currPath)}`
+                    let writePath = String.raw`${filename.split(".")[0]}${path.extname(currPath)}`
                     if (this.cacheWriteList.includes(`./project/assets/Picture/${writePath}`)) {
                         writePath = filename.split('.')[0] + `_${count++}` + path.extname(currPath)
                     }
@@ -707,18 +719,18 @@ module.exports = {
                     this.convertToSpriteAtlaFile(subMetas, filename, texture, plistWidth, plistHeight)
                 }
                 if (value.size == 1) {
-                    value.forEach((res, uuid) => {
+                    value.forEach((res: any, uuid: string) => {
                         let name = res["content"]["name"]
                         if (name.split('_')[0] != "default") {
                             let writePath = name + path.extname(currPath)
                             if (this.cacheWriteList.includes(`./project/assets/Picture/${writePath}`)) {
                                 writePath = name.split('.')[0] + `_${count++}` + path.extname(currPath)
                             }
-                            fileName = writePath
+                            let fileName = writePath
                             let pictureWidth = sizeOf(currPath).width
                             let pictureHeight = sizeOf(currPath).height
                             this.cacheReadList.push(currPath)
-                            this.cacheWriteList.push(String.raw `./project/assets/Picture/${fileName}`)
+                            this.cacheWriteList.push(String.raw`./project/assets/Picture/${fileName}`)
                             this.convertToPictureFile(res, uuid, fileName, pictureWidth, pictureHeight)
                         }
                     })
@@ -735,11 +747,11 @@ module.exports = {
                 if (this.cacheWriteList.includes(`./project/assets/Picture/${writePath}`)) {
                     writePath = name.split('.')[0] + `_${count++}` + path.extname(currPath)
                 }
-                fileName = writePath
+                let fileName = writePath
                 let pictureWidth = sizeOf(currPath).width
                 let pictureHeight = sizeOf(currPath).height
                 this.cacheReadList.push(currPath)
-                this.cacheWriteList.push(String.raw `./project/assets/Picture/${fileName}`)
+                this.cacheWriteList.push(String.raw`./project/assets/Picture/${fileName}`)
                 let sprite = {
                     "__type__": "cc.SpriteFrame",
                     "content": {
@@ -772,23 +784,15 @@ module.exports = {
                     res = (_s + res)
                     res = JSON.parse(JSON.stringify(res))
                     //console.log(res)
-                    /* */
-                    fs.mkdirSync(String.raw `./project/assets/Fonts`, {
-                        recursive: true
-                    }, (err) => {
-                        if (err) {
-                            console.log(err);
-                        }
-                    })
-                    fs.appendFileSync(String.raw `./project/assets/Fonts/${value["_name"] + ".fnt"}`, res, {
-                        encoding: "utf-8",
-                        flag: "w+",
-                        recursive: true
-                    }, (err) => {
-                        if (err) {
-                            console.log(err)
-                        }
-                    });
+                    try {
+                        fs.mkdirSync(String.raw`./project/assets/Fonts`, { recursive: true });
+                        fs.appendFileSync(String.raw`./project/assets/Fonts/${value["_name"] + ".fnt"}`, res, {
+                            encoding: "utf-8",
+                            flag: "w+"
+                        });
+                    } catch (error) {
+                        console.log(error)
+                    }
                     let uuid = decodeUuid(value["spriteFrame"]["__uuid__"])
                     if (this.spriteFramesMap.has(uuid)) {
                         let meta = {
@@ -805,11 +809,12 @@ module.exports = {
             }
         })
         this.copyFile()
-    },
+    }
+
     /**
      * @Description: 生成meta文件
      */
-    convertToMetaFile(fileMap) {
+    convertToMetaFile(fileMap: any) {
         for (let name in fileMap) {
             let _mkdir = ""
             let filename = name
@@ -846,7 +851,7 @@ module.exports = {
             }
             this.writeFile(_mkdir, filename + '.meta', metaData)
         }
-    },
+    }
 
     /**
      * @Description: 写入文件
@@ -854,30 +859,25 @@ module.exports = {
      * @param {string} filename
      * @param {object} data
      */
-    writeFile(_mkdir, filename, data) {
-        fs.mkdirSync(String.raw `./project/assets/${_mkdir}`, {
-            recursive: true
-        }, (err) => {
-            if (err) {
-                console.log(err);
-            }
-        })
-        fs.appendFileSync(String.raw `./project/assets/${_mkdir}/${filename}`, JSON.stringify(data), {
-            encoding: "utf-8",
-            flag: "w+"
-        }, (err) => {
-            if (err) {
-                console.log(err)
-            }
-        });
-    },
+    writeFile(_mkdir: string, filename: string, data: any) {
+
+        try {
+            fs.mkdirSync(String.raw`./project/assets/${_mkdir}`, { recursive: true })
+            fs.appendFileSync(String.raw`./project/assets/${_mkdir}/${filename}`, JSON.stringify(data), {
+                encoding: "utf-8",
+                flag: "w+"
+            });
+        } catch (error) {
+            console.log(error)
+        }
+    }
     /**
      * 提取有效信息（含有 uuid）
      * @param {object} data 元数据
      * @returns {object}
      */
-    extractValidInfo(data) {
-        const info = {};
+    extractValidInfo(data: any) {
+        const info: any = {};
         // 记录有用的属性
         const keys = ['__type__', '_name', 'fileId'];
         for (let i = 0; i < keys.length; i++) {
@@ -892,6 +892,6 @@ module.exports = {
             }
         }
         return info;
-    },
+    }
 
 }

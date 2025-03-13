@@ -1,26 +1,29 @@
 /*
  * @Date: 2021-01-26 15:51:31
  */
-const generator = require("@babel/generator");
-const parser = require("@babel/parser");
-const traverse = require("@babel/traverse");
-const types = require("@babel/types");
-const fs = require("fs");
-const _path = require("path")
-const uuid = require("./_uuid")
-const decodeUuid = require("./decode")
-const tool = require("./tools");
-module.exports = {
-    async splitCompile(code) {
+import { parse, traverse, types } from "@babel/core";
+import generator from "@babel/generator";
+import * as fs from "fs";
+import path from "path";
+import { original_uuid } from "./_uuid";
+import { decodeUuid } from "./decode";
+import tools from "./tools";
+
+export default new class {
+
+    async splitCompile(code: string) {
         // 1.parse
-        const ast = parser.parse(code);
-        const values = [];
+        const ast = parse(code);
+
+        if (ast == null) {
+            return;
+        }
+
+        const values: any[] = [];
         // 2,traverse
         const findValue = {
-            ArrayExpression(path) {
-                const {
-                    node
-                } = path;
+            ArrayExpression(tpath: any) {
+                const { node } = tpath;
                 if (node && node.elements) {
                     for (let i of node.elements) {
                         if (types.isStringLiteral(i)) {
@@ -32,10 +35,8 @@ module.exports = {
         };
 
         const splitVisitor = {
-            Property(path) {
-                const {
-                    node
-                } = path;
+            Property(tpath: any) {
+                const { node } = tpath;
                 if (values.length > 0) {
                     for (let value of values) {
                         if (node && (node.key.name == value || node.key.value == value) && node.value.elements) {
@@ -66,9 +67,9 @@ module.exports = {
                                                     if (a.arguments[1].type && a.arguments[1].type == "StringLiteral" && a.arguments[1].value != "__esModule") {
                                                         let filename = a.arguments[2].value.split('.')[0] + ".ts"
 
-                                                        let fileMap = new Set()
-                                                        fileMap[filename] = decodeUuid(uuid.original_uuid(a.arguments[1].value))
-                                                        tool.convertToMetaFile(fileMap)
+                                                        let fileMap = new Map()
+                                                        fileMap.set(filename, decodeUuid(original_uuid(a.arguments[1].value)))
+                                                        tools.convertToMetaFile(fileMap)
                                                     }
                                                 }
                                             }
@@ -78,9 +79,9 @@ module.exports = {
                                         if (i.expression.arguments[1]) {
                                             if (i.expression.arguments[1].type && i.expression.arguments[1].type == "StringLiteral" && i.expression.arguments[1].value != "__esModule") {
                                                 let filename = i.expression.arguments[2].value.split('.')[0] + ".ts"
-                                                let fileMap = new Set()
-                                                fileMap[filename] = decodeUuid(uuid.original_uuid(i.expression.arguments[1].value))
-                                                tool.convertToMetaFile(fileMap)
+                                                let fileMap = new Map()
+                                                fileMap.set(filename, decodeUuid(original_uuid(i.expression.arguments[1].value)))
+                                                tools.convertToMetaFile(fileMap)
                                             }
                                         }
                                     }
@@ -91,7 +92,7 @@ module.exports = {
                                         if (j.init) {
                                             if (j.type == "VariableDeclarator" && j.init.arguments) {
                                                 if (j.init.arguments[0] && j.init.arguments[0].value) {
-                                                    j.init.arguments[0].value = _path.basename(j.init.arguments[0].value)
+                                                    j.init.arguments[0].value = path.basename(j.init.arguments[0].value)
                                                 }
                                             }
                                             if (j.type == "VariableDeclarator" && j.init.expressions) {
@@ -99,7 +100,7 @@ module.exports = {
                                                     if (res.type == "CallExpression") {
                                                         if (res.arguments && res.arguments[0] && res.arguments[0].value) {
                                                             if (typeof res.arguments[0].value == "string") {
-                                                                res.arguments[0].value = _path.basename(res.arguments[0].value)
+                                                                res.arguments[0].value = path.basename(res.arguments[0].value)
                                                             }
                                                         }
                                                     }
@@ -113,7 +114,7 @@ module.exports = {
                                     if (i.expression.type == "CallExpression" && i.expression.arguments) {
                                         let res = i.expression.arguments
                                         if (res[0] && typeof res[0].value == "string") {
-                                            res[0].value = _path.basename(res[0].value)
+                                            res[0].value = path.basename(res[0].value)
                                         }
                                     }
                                 }
@@ -171,39 +172,39 @@ module.exports = {
                                     }
                                 }*/
                             }
-                            let str = JSON.stringify(node.value.elements[0].body)
-                            fs.mkdirSync(global.filePath, {
-                                recursive: true
-                            }, (err) => {
-                                if (err) {
-                                    console.log(err);
-                                }
-                            })
-                            fs.appendFileSync(`${global.filePath}/${value}.json`, str, {
-                                flag: 'w+'
-                            }, (err) => {
-                                if (err) {
-                                    console.log(err)
-                                }
-                            });
+
+                            try {
+
+                                let str = JSON.stringify(node.value.elements[0].body)
+                                fs.mkdirSync(global.filePath, { recursive: true })
+                                fs.appendFileSync(`${global.filePath}/${value}.json`, str, {
+                                    flag: 'w+'
+                                });
+
+                            } catch (error) {
+                                console.log(error)
+                            }
                         }
                     }
                 }
             }
         };
-        await traverse.default(ast, findValue);
-        await traverse.default(ast, splitVisitor);
-    },
-    generatorCode(ast, filename) {
-        let res = generator.default(ast, {})["code"]
+
+        traverse(ast, findValue);
+        traverse(ast, splitVisitor);
+    }
+
+    generatorCode(ast: any, filename: string) {
+        let res = generator(ast, {})["code"]
+        fs.mkdirSync(`./project/assets/Scripts`, { recursive: true })
         fs.appendFile(`./project/assets/Scripts/${filename}.ts`, JSON.parse(JSON.stringify(res.slice(1, res.length - 1))), {
             encoding: "utf-8",
-            flag: "w+"
+            flag: "w+",
         }, (err) => {
             if (err) {
                 console.log(err)
             }
         })
-        return generator.default(ast, {})
+        return generator(ast, {})
     }
 }

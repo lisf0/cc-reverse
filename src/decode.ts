@@ -17,9 +17,9 @@ var Indices = UuidTemplate.map(function (x, i) { return x === '-' ? NaN : i; }).
 
 // fcmR3XADNLgJ1ByKhqcC5Z -> fc991dd7-0033-4b80-9d41-c8a86a702e59
 
-module.exports = function (base64) {
-    if(typeof base64 != "string"){
-        return
+export function decodeUuid(base64: string) {
+    if (typeof base64 != "string") {
+        return "";
     }
     if (base64.length !== 22) {
         return base64;
