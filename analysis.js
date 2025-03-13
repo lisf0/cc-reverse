@@ -42,7 +42,7 @@ module.exports = {
                             let _require = node.value.elements[0].params[0].name
                             let _module = node.value.elements[0].params[1].name
                             let _exports = node.value.elements[0].params[2].name
-                            
+
                             let id1 = types.identifier(`${_require}`)
                             let id2 = types.identifier(`${_module}`)
                             let id3 = types.identifier(`${_exports}`)
@@ -64,8 +64,8 @@ module.exports = {
                                             if (a.arguments && a.arguments.length == 3) {
                                                 if (a.arguments[1]) {
                                                     if (a.arguments[1].type && a.arguments[1].type == "StringLiteral" && a.arguments[1].value != "__esModule") {
-                                                        let filename = a.arguments[2].value.split('.')[0]+ ".ts"
-                                                        
+                                                        let filename = a.arguments[2].value.split('.')[0] + ".ts"
+
                                                         let fileMap = new Set()
                                                         fileMap[filename] = decodeUuid(uuid.original_uuid(a.arguments[1].value))
                                                         tool.convertToMetaFile(fileMap)
@@ -75,7 +75,7 @@ module.exports = {
                                         }
                                     }
                                     if (i.expression.arguments && i.expression.arguments.length == 3) {
-                                        if (i.expression.arguments[1]) {                                        
+                                        if (i.expression.arguments[1]) {
                                             if (i.expression.arguments[1].type && i.expression.arguments[1].type == "StringLiteral" && i.expression.arguments[1].value != "__esModule") {
                                                 let filename = i.expression.arguments[2].value.split('.')[0] + ".ts"
                                                 let fileMap = new Set()
@@ -172,14 +172,14 @@ module.exports = {
                                 }*/
                             }
                             let str = JSON.stringify(node.value.elements[0].body)
-                            fs.mkdirSync('./astTree', {
+                            fs.mkdirSync(global.filePath, {
                                 recursive: true
                             }, (err) => {
                                 if (err) {
                                     console.log(err);
                                 }
                             })
-                            fs.appendFileSync(`./astTree/${value}.json`, str, {
+                            fs.appendFileSync(`${global.filePath}/${value}.json`, str, {
                                 flag: 'w+'
                             }, (err) => {
                                 if (err) {

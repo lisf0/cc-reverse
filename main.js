@@ -4,16 +4,19 @@
 const fs = require('fs')
 const path = require('path')
 const stringRandom = require('string-random')
-global.currPath = String.raw `C:\Users\admin\Desktop\putao-main\res` //定义全局res路径
-const settings = fs.readFileSync(String.raw `C:\Users\admin\Desktop\putao-main\src\settings.js`) //setting路径
-const project = fs.readFileSync(String.raw `C:\Users\admin\Desktop\putao-main\src\project.js`) ///project路径
+
+global.buildPath = String.raw`E:\test\NewProject_2\build\web-mobile` //定义全局build路径
+global.filePath = path.join("./", String.raw`astTree`)
+
+global.currPath = path.join(global.buildPath, "res") //定义全局res路径
+const settings = fs.readFileSync(path.join(global.buildPath, String.raw`src\settings.js`)) //setting路径
+const project = fs.readFileSync(path.join(global.buildPath, String.raw`src\project.js`)) //project路径
 const tool = require("./tools")
 const analysis = require('./analysis');
 const decode = require('./decode');
 const code = project.toString('utf-8');
 let _ccsettings = "let window = {CCSettings: {}};" + settings.toString('utf-8').split(';')[0]
 global.Settings = eval(_ccsettings)
-global.filePath = String.raw `F:\cc-project-reverse\astTree`
 fs.mkdirSync(global.filePath, {
     recursive: true
 })
