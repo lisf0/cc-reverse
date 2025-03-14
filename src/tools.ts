@@ -145,7 +145,7 @@ export default new class {
                         }
                         that.writeFile(_mkdir, name + ".meta", metaData)
                     }
-                    if (type == "cc.TextAsset") {
+                    else if (type == "cc.TextAsset") {
                         let name = data['_name'] + ".json"
                         let uuid = key
                         let _mkdir = "resource"
@@ -158,7 +158,7 @@ export default new class {
                         that.writeFile(_mkdir, name + ".meta", metaData)
                     }
                     //console.log(type)
-                    if (type == "cc.AnimationClip") {
+                    else if (type == "cc.AnimationClip") {
                         let name = data["_name"]
                         let _mkdir = "Animation"
                         let filename = name + ".anim"
@@ -174,6 +174,10 @@ export default new class {
                             "subMetas": {}
                         }
                         that.writeFile(_mkdir, filename + ".meta", metaData)
+                    }
+                    else {
+                        //未处理类型
+                        console.warn("unhandled type:", type)
                     }
                 }
             } else {
@@ -204,7 +208,7 @@ export default new class {
                                 }
                             }
                         }
-                        if (type === 'cc.Prefab') {
+                        else if (type === 'cc.Prefab') {
                             let name = data[i]['_name']
                             //console.log(name)
                             let filename = name + '.prefab'
@@ -246,7 +250,7 @@ export default new class {
                                 }
                             }
                         }
-                        if (type == "cc.AudioClip") {
+                        else if (type == "cc.AudioClip") {
                             let name = data[i]["_name"] + data[i]["_native"]
                             let _mkdir = "Audio"
                             that.audio.push(data[i])
@@ -275,7 +279,7 @@ export default new class {
                                 }
                             }
                         }
-                        if (type == "cc.AnimationClip") {
+                        else if (type == "cc.AnimationClip") {
                             let name = data[i]["_name"]
                             let filename = name + ".anim"
                             let _mkdir = "Animation"
@@ -298,7 +302,7 @@ export default new class {
                                 }
                             }
                         }
-                        if (type == "cc.TTFFont" || type == "cc.BitmapFont" || type == "cc.LabelAtlas") {
+                        else if (type == "cc.TTFFont" || type == "cc.BitmapFont" || type == "cc.LabelAtlas") {
                             for (let j in that.nodeData) {
                                 if (that.nodeData[j]["_name"] && that.nodeData[j]["_name"] == data[i]["_name"]) {
                                     let uuid = decode_uuid(that.createLibrary(j, key))
@@ -307,7 +311,7 @@ export default new class {
                             }
                         }
                         //骨骼资源
-                        if (type == "dragonBones.DragonBonesAsset") {
+                        else if (type == "dragonBones.DragonBonesAsset") {
                             let name = data[i]["_name"]
                             let _mkdir = "Texture" + "/" + name
                             if (data[i]["_native"]) {
@@ -353,7 +357,7 @@ export default new class {
                             //JSON格式
                         }
                         //骨骼图集
-                        if (type == "dragonBones.DragonBonesAtlasAsset") {
+                        else if (type == "dragonBones.DragonBonesAtlasAsset") {
                             let name = data[i]["_name"]
                             let filename = name + ".json"
                             let _mkdir = "Texture" + "/" + name
@@ -396,7 +400,7 @@ export default new class {
                             }
                         }
                         //粒子资源                       
-                        if (type == 'cc.ParticleAsset') {
+                        else if (type == 'cc.ParticleAsset') {
                             let name = data[i]["_name"]
                             let filename = data[i]["_name"] + data[i]["_native"]
                             //console.log(name)
@@ -416,7 +420,7 @@ export default new class {
                         }
                         //Texture资源
                         //图集
-                        if (type == 'cc.SpriteAtlas') {
+                        else if (type == 'cc.SpriteAtlas') {
                             let name = data[i]["_name"]
                             for (let j in that.nodeData) {
                                 if (that.nodeData[j]["_name"] == name) {
@@ -425,7 +429,7 @@ export default new class {
                                 }
                             }
                         }
-                        if (type == "cc.SpriteFrame") {
+                        else if (type == "cc.SpriteFrame") {
                             let texture = data[i]["content"]["texture"]
                             let temp = new Map()
                             let uuid = ""
@@ -449,11 +453,15 @@ export default new class {
 
 
                         }
+                        else {
+                            //未处理类型
+                            console.warn("unhandled type:", type)
+                        }
                     }
                 }
             }
-
         }
+
         async function reveal(jsonObject: any) {
             for (let key in jsonObject) {
                 if (typeof (jsonObject[key]) == 'object' && !that.isEmptyObject(jsonObject[key])) {
@@ -493,17 +501,15 @@ export default new class {
 
     copyFile() {
         for (let i in this.cacheReadList) {
-            fs.mkdirSync(path.dirname(this.cacheWriteList[i]), {
-                recursive: true
-            })
+            fs.mkdirSync(path.dirname(this.cacheWriteList[i]), { recursive: true })
             let readStream = fs.createReadStream(this.cacheReadList[i])
             let writeStream = fs.createWriteStream(this.cacheWriteList[i])
             readStream.pipe(writeStream)
             readStream.on('error', (error) => {
-                console.log('readStream error', error.message);
+                console.error('readStream error', error.message);
             })
             writeStream.on('error', (error) => {
-                console.log('writeStream error', error.message);
+                console.error('writeStream error', error.message);
             })
         }
     }
@@ -814,7 +820,7 @@ export default new class {
     /**
      * @Description: 生成meta文件
      */
-    convertToMetaFile(fileMap: Map<string, string>) {
+    createMetaFile(fileMap: Map<string, string>) {
 
         for (let [key, value] of fileMap) {
             let _mkdir = ""
@@ -864,10 +870,7 @@ export default new class {
 
         try {
             fs.mkdirSync(String.raw`${global.paths.output}/assets/${_mkdir}`, { recursive: true })
-            fs.appendFileSync(String.raw`${global.paths.output}/assets/${_mkdir}/${filename}`, JSON.stringify(data), {
-                encoding: "utf-8",
-                flag: "w+"
-            });
+            fs.appendFileSync(String.raw`${global.paths.output}/assets/${_mkdir}/${filename}`, JSON.stringify(data), { encoding: "utf-8", flag: "w+" });
         } catch (error) {
             console.log(error)
         }

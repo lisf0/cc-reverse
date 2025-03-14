@@ -68,7 +68,7 @@ export default new class {
 
                                                         let fileMap = new Map()
                                                         fileMap.set(filename, decode_uuid(original_uuid(a.arguments[1].value)))
-                                                        tools.convertToMetaFile(fileMap)
+                                                        tools.createMetaFile(fileMap)
                                                     }
                                                 }
                                             }
@@ -80,7 +80,7 @@ export default new class {
                                                 let filename = i.expression.arguments[2].value.split('.')[0] + ".ts"
                                                 let fileMap = new Map()
                                                 fileMap.set(filename, decode_uuid(original_uuid(i.expression.arguments[1].value)))
-                                                tools.convertToMetaFile(fileMap)
+                                                tools.createMetaFile(fileMap)
                                             }
                                         }
                                     }
