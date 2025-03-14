@@ -83,4 +83,4 @@ export function decode_uuid(base64: string) {
         UuidTemplate[Indices[j++]] = HexChars[rhs & 0xF];
     }
     return UuidTemplate.join('');
-};
+}

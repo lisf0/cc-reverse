@@ -66,8 +66,8 @@ export default new class {
                                                     if (a.arguments[1].type && a.arguments[1].type == "StringLiteral" && a.arguments[1].value != "__esModule") {
                                                         let filename = a.arguments[2].value.split('.')[0] + ".ts"
 
-                                                        let fileMap = new Map()
-                                                        fileMap.set(filename, decode_uuid(original_uuid(a.arguments[1].value)))
+                                                        let fileMap: Record<string, string> = {}
+                                                        fileMap[filename] = decode_uuid(original_uuid(a.arguments[1].value));
                                                         tools.createMetaFile(fileMap)
                                                     }
                                                 }
@@ -78,8 +78,8 @@ export default new class {
                                         if (i.expression.arguments[1]) {
                                             if (i.expression.arguments[1].type && i.expression.arguments[1].type == "StringLiteral" && i.expression.arguments[1].value != "__esModule") {
                                                 let filename = i.expression.arguments[2].value.split('.')[0] + ".ts"
-                                                let fileMap = new Map()
-                                                fileMap.set(filename, decode_uuid(original_uuid(i.expression.arguments[1].value)))
+                                                let fileMap: Record<string, string> = {}
+                                                fileMap[filename] = decode_uuid(original_uuid(i.expression.arguments[1].value))
                                                 tools.createMetaFile(fileMap)
                                             }
                                         }

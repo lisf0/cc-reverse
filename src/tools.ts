@@ -4,6 +4,7 @@
 import * as fs from "fs";
 import path from "path";
 import stringRandom from "string-random";
+import { AnimationClipMeta, AudioMeta, CCMeta, JavaScriptMeta, JsonMeta, PrefabMeta, SceneMeta, SpriteFrameMate, TextureMeta, TypeScriptMeta } from "./cc-define";
 import { Conf } from "./conf";
 import json2plist from "./json2plist";
 import { decode_uuid } from "./uuid-utils";
@@ -115,6 +116,8 @@ export default new class {
         })
         let count = 0
 
+        const excludes = ["cc.Material", "cc.EffectAsset", "cc.Node", "cc.Label"]
+
         function writeData(data: any) {
             //json资源
             if (typeof data === "object" && data["__type__"]) {
@@ -125,14 +128,6 @@ export default new class {
                         //that.audio.push(data)
                         let _mkdir = "Audio"
                         let uuid = key
-                        let metaData = {
-                            "ver": "1.2.7",
-                            "uuid": uuid,
-                            "optimizationPolicy": "AUTO",
-                            "asyncLoadAssets": false,
-                            "readonly": false,
-                            "subMetas": {}
-                        }
                         if (that.fileMap.has(uuid)) {
                             let writePath = String.raw`${name}`
                             let currPath = that.fileMap.get(uuid)
@@ -143,19 +138,13 @@ export default new class {
                             that.cacheWriteList.push(`${global.paths.output}/assets/${_mkdir}/${writePath}`)
                             that.fileMap.delete(uuid)
                         }
-                        that.writeFile(_mkdir, name + ".meta", metaData)
+                        that.createMetaFile({ [name]: uuid });
                     }
                     else if (type == "cc.TextAsset") {
                         let name = data['_name'] + ".json"
-                        let uuid = key
                         let _mkdir = "resource"
-                        let metaData = {
-                            "ver": "1.2.7",
-                            "uuid": uuid,
-                            "subMetas": {}
-                        }
                         that.writeFile(_mkdir, name, data)
-                        that.writeFile(_mkdir, name + ".meta", metaData)
+                        that.createMetaFile({ [name]: key }, _mkdir);
                     }
                     //console.log(type)
                     else if (type == "cc.AnimationClip") {
@@ -164,20 +153,13 @@ export default new class {
                         let filename = name + ".anim"
                         that.writeFile(_mkdir, filename, data)
                         that.animation.push(data)
-                        let uuid = key
-                        let metaData = {
-                            "ver": "1.2.7",
-                            "uuid": uuid,
-                            "optimizationPolicy": "AUTO",
-                            "asyncLoadAssets": false,
-                            "readonly": false,
-                            "subMetas": {}
-                        }
-                        that.writeFile(_mkdir, filename + ".meta", metaData)
+                        that.createMetaFile({ [filename]: key });
                     }
                     else {
-                        //未处理类型
-                        console.warn("unhandled type:", type)
+                        if (!excludes.includes(type)) {
+                            //未处理类型
+                            console.warn("unhandled type:", type)
+                        }
                     }
                 }
             } else {
@@ -195,15 +177,7 @@ export default new class {
                                 if (Array.isArray(that.nodeData[j])) {
                                     if (that.nodeData[j][0]["_name"] == data[0]["_name"]) {
                                         let uuid = decode_uuid(that.createLibrary(j, key))
-                                        let metaData = {
-                                            "ver": "1.2.7",
-                                            "uuid": uuid,
-                                            "optimizationPolicy": "AUTO",
-                                            "asyncLoadAssets": false,
-                                            "readonly": false,
-                                            "subMetas": {}
-                                        }
-                                        that.writeFile(_mkdir, filename + ".meta", metaData)
+                                        that.createMetaFile({ [filename]: uuid });
                                     }
                                 }
                             }
@@ -222,15 +196,7 @@ export default new class {
                                 if (Array.isArray(that.nodeData[j])) {
                                     if (that.nodeData[j][0]["_name"] == data[0]["_name"]) {
                                         let uuid = decode_uuid(that.createLibrary(j, key))
-                                        let metaData = {
-                                            "ver": "1.2.7",
-                                            "uuid": uuid,
-                                            "optimizationPolicy": "AUTO",
-                                            "asyncLoadAssets": false,
-                                            "readonly": false,
-                                            "subMetas": {}
-                                        }
-                                        that.writeFile(_mkdir, filename + ".meta", metaData)
+                                        that.createMetaFile({ [filename]: uuid });
                                     }
                                 }
                                 if (that.nodeData[j]["__type__"] == 'cc.Prefab' && that.nodeData[j]["_name"] == name) {
@@ -238,44 +204,28 @@ export default new class {
                                     if (key.length > 9) {
                                         uuid = key
                                     }
-                                    let metaData = {
-                                        "ver": "1.2.7",
-                                        "uuid": uuid,
-                                        "optimizationPolicy": "AUTO",
-                                        "asyncLoadAssets": false,
-                                        "readonly": false,
-                                        "subMetas": {}
-                                    }
-                                    that.writeFile(_mkdir, filename + ".meta", metaData)
+                                    that.createMetaFile({ [filename]: uuid });
                                 }
                             }
                         }
                         else if (type == "cc.AudioClip") {
-                            let name = data[i]["_name"] + data[i]["_native"]
+                            let filename = data[i]["_name"] + data[i]["_native"]
                             let _mkdir = "Audio"
                             that.audio.push(data[i])
                             for (let j in that.nodeData) {
                                 if (that.nodeData[j]["_name"] && that.nodeData[j]["_name"] == data[i]["_name"]) {
                                     let uuid = decode_uuid(that.createLibrary(j, key))
-                                    let metaData = {
-                                        "ver": "1.2.7",
-                                        "uuid": uuid,
-                                        "optimizationPolicy": "AUTO",
-                                        "asyncLoadAssets": false,
-                                        "readonly": false,
-                                        "subMetas": {}
-                                    }
                                     if (that.fileMap.has(uuid)) {
-                                        let writePath = String.raw`${name}`
+                                        let writePath = String.raw`${filename}`
                                         let currPath = that.fileMap.get(uuid)
                                         if (that.cacheWriteList.includes(`${global.paths.output}/assets/Texture/${writePath}`)) {
-                                            writePath = name + `_${count++}` + path.extname(currPath)
+                                            writePath = filename + `_${count++}` + path.extname(currPath)
                                         }
                                         that.cacheReadList.push(currPath)
                                         that.cacheWriteList.push(`${global.paths.output}/assets/${_mkdir}/${writePath}`)
                                         that.fileMap.delete(uuid)
                                     }
-                                    that.writeFile(_mkdir, name + ".meta", metaData)
+                                    that.createMetaFile({ [filename]: uuid });
                                 }
                             }
                         }
@@ -290,15 +240,7 @@ export default new class {
                                     that.animationMap.set(filename, decode_uuid(that.createLibrary(j, key)))
 
                                     let uuid = decode_uuid(that.createLibrary(j, key))
-                                    let metaData = {
-                                        "ver": "1.2.7",
-                                        "uuid": uuid,
-                                        "optimizationPolicy": "AUTO",
-                                        "asyncLoadAssets": false,
-                                        "readonly": false,
-                                        "subMetas": {}
-                                    }
-                                    that.writeFile(_mkdir, filename + ".meta", metaData)
+                                    that.createMetaFile({ [filename]: uuid });
                                 }
                             }
                         }
@@ -320,12 +262,8 @@ export default new class {
                                     if (that.nodeData[j]["_name"] && that.nodeData[j]["_name"] == data[i]["_name"]) {
                                         uuid = decode_uuid(that.createLibrary(j, key))
                                         let filename = name + data[i]["_native"]
-                                        let metaData = {
-                                            "ver": "1.0.1",
-                                            "uuid": uuid,
-                                            "subMetas": {}
-                                        }
-                                        that.writeFile(_mkdir, filename + ".meta", metaData)
+                                        that.createMetaFile({ [filename]: uuid }, _mkdir);
+
                                         if (that.fileMap.has(uuid)) {
                                             let currPath = that.fileMap.get(uuid)
                                             let writePath = String.raw`${name}${path.extname(currPath)}`
@@ -345,12 +283,7 @@ export default new class {
                                 for (let j in that.nodeData) {
                                     if (that.nodeData[j]["_name"] && that.nodeData[j]["_name"] == data[i]["_name"]) {
                                         let uuid = decode_uuid(that.createLibrary(j, key))
-                                        let metaData = {
-                                            "ver": "1.0.1",
-                                            "uuid": uuid,
-                                            "subMetas": {}
-                                        }
-                                        that.writeFile(_mkdir, filename + ".meta", metaData)
+                                        that.createMetaFile({ [filename]: uuid }, _mkdir);
                                     }
                                 }
                             }
@@ -365,12 +298,7 @@ export default new class {
                             for (let j in that.nodeData) {
                                 if (that.nodeData[j]["_name"] && that.nodeData[j]["_name"] == data[i]["_name"]) {
                                     let uuid = decode_uuid(that.createLibrary(j, key))
-                                    let metaData = {
-                                        "ver": "1.0.1",
-                                        "uuid": uuid,
-                                        "subMetas": {}
-                                    }
-                                    that.writeFile(_mkdir, filename + ".meta", metaData)
+                                    that.createMetaFile({ [filename]: uuid }, _mkdir);
                                 }
                             }
                             if (that.fileMap.has(decode_uuid(data[i]["_texture"]["__uuid__"]))) {
@@ -407,14 +335,9 @@ export default new class {
                             let _mkdir = "Picture"
                             for (let j in that.nodeData) {
                                 if (that.nodeData[j]["_name"] == name) {
-                                    let texture = decode_uuid(that.createLibrary(j, key))
-                                    that.spriteAtlasMap.set(texture, data[i])
-                                    let metaData = {
-                                        "ver": "1.0.1",
-                                        "uuid": texture,
-                                        "subMetas": {}
-                                    }
-                                    that.writeFile(_mkdir, filename + ".meta", metaData)
+                                    let uuid = decode_uuid(that.createLibrary(j, key))
+                                    that.spriteAtlasMap.set(uuid, data[i])
+                                    that.createMetaFile({ [filename]: uuid }, _mkdir);
                                 }
                             }
                         }
@@ -455,7 +378,10 @@ export default new class {
                         }
                         else {
                             //未处理类型
-                            console.warn("unhandled type:", type)
+                            if (!excludes.includes(type)) {
+                                //未处理类型
+                                console.warn("unhandled type:", type)
+                            }
                         }
                     }
                 }
@@ -521,44 +447,22 @@ export default new class {
         let plistJson: any = {}
         let count = 0
         let pictureName = filename.split('.')[0]
-        let pictureSubMetas: any = {}
-        pictureSubMetas[pictureName] = {
-            "ver": "1.0.4",
-            "uuid": decode_uuid(stringRandom(22)),
-            "rawTextureUuid": _uuid,
-            "trimType": "auto",
-            "trimThreshold": 1,
-            "rotated": false,
-            "offsetX": 0,
-            "offsetY": 0,
-            "trimX": 0,
-            "trimY": 0,
-            "width": plistWidth,
-            "height": plistHeight,
-            "rawWidth": plistWidth,
-            "rawHeight": plistHeight,
-            "borderTop": 0,
-            "borderBottom": 0,
-            "borderLeft": 0,
-            "borderRight": 0,
-            "spriteType": "normal",
-            "subMetas": {}
-        }
-        let spriteMap = {
-            "ver": "2.3.4",
-            "uuid": _uuid,
-            "type": "sprite",
-            "wrapMode": "clamp",
-            "filterMode": "bilinear",
-            "premultiplyAlpha": false,
-            "genMipmaps": false,
-            "packable": true,
-            "width": plistWidth,
-            "height": plistHeight,
-            "platformSettings": {},
-            "subMetas": pictureSubMetas
-        }
-        this.writeFile("Picture", filename + ".meta", spriteMap)
+
+        let mainMeta = TextureMeta.create(Object.assign({}, {
+            uuid: _uuid,
+            width: plistWidth,
+            height: plistHeight
+        }))
+        let subMeta = SpriteFrameMate.create(Object.assign({}, {
+            uuid: decode_uuid(stringRandom(22)),
+            textureUuid: _uuid,
+            rect: [0, 0, plistWidth, plistHeight],
+            originalSize: [plistWidth, plistHeight]
+        }))
+        mainMeta.addSubMetaInfo(pictureName, subMeta)
+
+        this.writeFile("Picture", filename + ".meta", mainMeta.toObj())
+
         subMetas.forEach((res: any) => {
             let name = res["sprite"]["content"]["name"]
             let _spriteName = name + ".jpeg"
@@ -618,50 +522,22 @@ export default new class {
     }
 
     convertToPictureFile(sprite: any, uuid: string, filename: string, pictureWidth: number, pictureHeight: number, filePath?: string) {
-        let _subMetas: any = {}
         let name = filename.split('.')[0]
 
-        _subMetas[name] = {
-            "ver": "1.0.4",
-            "uuid": uuid,
-            "rawTextureUuid": decode_uuid(sprite["content"]["texture"]),
-            "trimType": "auto",
-            "trimThreshold": 1,
-            "rotated": false,
-            "offsetX": sprite["content"]["offset"][0],
-            "offsetY": sprite["content"]["offset"][1],
-            "trimX": sprite["content"]["rect"][0],
-            "trimY": sprite["content"]["rect"][1],
-            "width": sprite["content"]["rect"][2],
-            "height": sprite["content"]["rect"][3],
-            "rawWidth": sprite["content"]["originalSize"][0],
-            "rawHeight": sprite["content"]["originalSize"][1],
-            "borderTop": sprite["content"]["capInsets"][0],
-            "borderBottom": sprite["content"]["capInsets"][1],
-            "borderLeft": sprite["content"]["capInsets"][2],
-            "borderRight": sprite["content"]["capInsets"][3],
-            "spriteType": "normal",
-            "subMetas": {}
-        }
-        let _spriteMap = {
-            "ver": "2.3.4",
-            "uuid": decode_uuid(sprite["content"]["texture"]),
-            "type": "sprite",
-            "wrapMode": "clamp",
-            "filterMode": "bilinear",
-            "premultiplyAlpha": false,
-            "genMipmaps": false,
-            "packable": true,
-            "width": pictureWidth,
-            "height": pictureHeight,
-            "platformSettings": {},
-            "subMetas": _subMetas
-        }
+        let textureUuid = decode_uuid(sprite["content"]["texture"]);
+
+        let mainMate = TextureMeta.create({ uuid: textureUuid, width: pictureWidth, height: pictureHeight })
+        let subMate = SpriteFrameMate.create(Object.assign({}, sprite["content"], {
+            uuid,
+            textureUuid,
+        }))
+        mainMate.addSubMetaInfo(name, subMate);
+
         let writePath = "Picture"
         if (filePath) {
             writePath = filePath
         }
-        this.writeFile(writePath, filename + ".meta", _spriteMap)
+        this.writeFile(writePath, filename + ".meta", mainMate.toObj())
     }
 
     convertToFile() {
@@ -820,43 +696,54 @@ export default new class {
     /**
      * @Description: 生成meta文件
      */
-    createMetaFile(fileMap: Map<string, string>) {
+    createMetaFile(infos: Record<string, string>, mkdir?: string) {
 
-        for (let [key, value] of fileMap) {
-            let _mkdir = ""
+        for (let key in infos) {
+            let _mkdir = mkdir || ""
             let filename = key
-            if (path.extname(filename) === ".fire") {
-                _mkdir = "Scene"
+            let uuid = infos[key];
+
+            let data: CCMeta | null = null;
+            let ext = path.extname(filename);
+            switch (ext) {
+                case ".fire":
+                    _mkdir = mkdir || "Scene"
+                    data = SceneMeta.create({ uuid });
+                    break;
+                case ".prefab":
+                    _mkdir = mkdir || "Prefab"
+                    data = PrefabMeta.create({ uuid });
+                    break;
+                case ".js":
+                    _mkdir = mkdir || "Scripts"
+                    data = JavaScriptMeta.create({ uuid });
+                    break;
+                case ".ts":
+                    _mkdir = mkdir || "Scripts"
+                    data = TypeScriptMeta.create({ uuid });
+                    break;
+                case ".anim":
+                    _mkdir = mkdir || "Animation"
+                    data = AnimationClipMeta.create({ uuid });
+                    break;
+                case ".mp3":
+                case ".ogg":
+                case ".wav":
+                    _mkdir = mkdir || "Audio"
+                    data = AudioMeta.create({ uuid });
+                    break;
+                case ".json":
+                    // _mkdir = mkdir || "Json"
+                    data = JsonMeta.create({ uuid });
+                    break;
+                default:
+                    console.warn(`Unsupported file type: ${ext}`);
+                    //     throw new Error(`Unsupported file type: ${ext}`);
+                    break;
             }
-            if (path.extname(filename) === ".prefab") {
-                _mkdir = "Prefab"
+            if (data) {
+                this.writeFile(_mkdir, filename + '.meta', data.toObj());
             }
-            if (path.extname(filename) === ".ts") {
-                _mkdir = "Scripts"
-            }
-            if (path.extname(filename) === ".anim") {
-                _mkdir = "Animation"
-            }
-            if (path.extname(filename) === ".mp3") {
-                _mkdir = "Audio"
-                let metaData = {
-                    "ver": "2.0.0",
-                    "uuid": value,
-                    "downloadMode": 0,
-                    "subMetas": {}
-                }
-                this.writeFile(_mkdir, filename + '.meta', metaData)
-                continue
-            }
-            let metaData = {
-                "ver": "1.2.7",
-                "uuid": value,
-                "optimizationPolicy": "AUTO",
-                "asyncLoadAssets": false,
-                "readonly": false,
-                "subMetas": {}
-            }
-            this.writeFile(_mkdir, filename + '.meta', metaData)
         }
     }
 
