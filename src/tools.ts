@@ -5,8 +5,8 @@ import * as fs from "fs";
 import path from "path";
 import stringRandom from "string-random";
 import { Conf } from "./conf";
-import { decodeUuid } from "./decode";
 import json2plist from "./json2plist";
+import { decode_uuid } from "./uuid-utils";
 
 const sizeOf = require('image-size');
 
@@ -41,7 +41,7 @@ export default new class {
         this.initialData = [];
         this.fileList = [];
         //读取文件
-        this.readFile(global.currPath, true).then(() => {
+        this.readFile(global.paths.res, true).then(() => {
             this.convertToFile()
             Conf.init()
         })
@@ -71,8 +71,8 @@ export default new class {
             }
         }
         if (first) {
-            if (!this.isEmptyObject(global.Settings["subpackages"])) {
-                let subpackagesPath = path.dirname(global.currPath) + String.raw`\subpackages`
+            if (!this.isEmptyObject(global.settings["subpackages"])) {
+                let subpackagesPath = path.dirname(global.paths.res) + String.raw`\subpackages`
                 await this.readFile(subpackagesPath, false);
             }
             for (let currPath of this.fileList) {
@@ -106,7 +106,7 @@ export default new class {
      * @param {object} data
      */
     process(key: string, data: any) {
-        if (global.Settings == "{}") {
+        if (global.settings == "{}") {
             return
         }
         let that = this
@@ -136,11 +136,11 @@ export default new class {
                         if (that.fileMap.has(uuid)) {
                             let writePath = String.raw`${name}`
                             let currPath = that.fileMap.get(uuid)
-                            if (that.cacheWriteList.includes(`./project/assets/Texture/${writePath}`)) {
+                            if (that.cacheWriteList.includes(`${global.paths.output}/assets/Texture/${writePath}`)) {
                                 writePath = name + `_${count++}` + path.extname(currPath)
                             }
                             that.cacheReadList.push(currPath)
-                            that.cacheWriteList.push(`./project/assets/${_mkdir}/${writePath}`)
+                            that.cacheWriteList.push(`${global.paths.output}/assets/${_mkdir}/${writePath}`)
                             that.fileMap.delete(uuid)
                         }
                         that.writeFile(_mkdir, name + ".meta", metaData)
@@ -190,7 +190,7 @@ export default new class {
                             for (let j in that.nodeData) {
                                 if (Array.isArray(that.nodeData[j])) {
                                     if (that.nodeData[j][0]["_name"] == data[0]["_name"]) {
-                                        let uuid = decodeUuid(that.createLibrary(j, key))
+                                        let uuid = decode_uuid(that.createLibrary(j, key))
                                         let metaData = {
                                             "ver": "1.2.7",
                                             "uuid": uuid,
@@ -217,7 +217,7 @@ export default new class {
                             for (let j in that.nodeData) {
                                 if (Array.isArray(that.nodeData[j])) {
                                     if (that.nodeData[j][0]["_name"] == data[0]["_name"]) {
-                                        let uuid = decodeUuid(that.createLibrary(j, key))
+                                        let uuid = decode_uuid(that.createLibrary(j, key))
                                         let metaData = {
                                             "ver": "1.2.7",
                                             "uuid": uuid,
@@ -230,7 +230,7 @@ export default new class {
                                     }
                                 }
                                 if (that.nodeData[j]["__type__"] == 'cc.Prefab' && that.nodeData[j]["_name"] == name) {
-                                    let uuid = decodeUuid(that.createLibrary(j, key))
+                                    let uuid = decode_uuid(that.createLibrary(j, key))
                                     if (key.length > 9) {
                                         uuid = key
                                     }
@@ -252,7 +252,7 @@ export default new class {
                             that.audio.push(data[i])
                             for (let j in that.nodeData) {
                                 if (that.nodeData[j]["_name"] && that.nodeData[j]["_name"] == data[i]["_name"]) {
-                                    let uuid = decodeUuid(that.createLibrary(j, key))
+                                    let uuid = decode_uuid(that.createLibrary(j, key))
                                     let metaData = {
                                         "ver": "1.2.7",
                                         "uuid": uuid,
@@ -264,11 +264,11 @@ export default new class {
                                     if (that.fileMap.has(uuid)) {
                                         let writePath = String.raw`${name}`
                                         let currPath = that.fileMap.get(uuid)
-                                        if (that.cacheWriteList.includes(`./project/assets/Texture/${writePath}`)) {
+                                        if (that.cacheWriteList.includes(`${global.paths.output}/assets/Texture/${writePath}`)) {
                                             writePath = name + `_${count++}` + path.extname(currPath)
                                         }
                                         that.cacheReadList.push(currPath)
-                                        that.cacheWriteList.push(`./project/assets/${_mkdir}/${writePath}`)
+                                        that.cacheWriteList.push(`${global.paths.output}/assets/${_mkdir}/${writePath}`)
                                         that.fileMap.delete(uuid)
                                     }
                                     that.writeFile(_mkdir, name + ".meta", metaData)
@@ -283,9 +283,9 @@ export default new class {
                             that.animation.push(data[i])
                             for (let j in that.nodeData) {
                                 if (that.nodeData[j]["_name"] && that.nodeData[j]["_name"] == data[i]["_name"]) {
-                                    that.animationMap.set(filename, decodeUuid(that.createLibrary(j, key)))
+                                    that.animationMap.set(filename, decode_uuid(that.createLibrary(j, key)))
 
-                                    let uuid = decodeUuid(that.createLibrary(j, key))
+                                    let uuid = decode_uuid(that.createLibrary(j, key))
                                     let metaData = {
                                         "ver": "1.2.7",
                                         "uuid": uuid,
@@ -301,7 +301,7 @@ export default new class {
                         if (type == "cc.TTFFont" || type == "cc.BitmapFont" || type == "cc.LabelAtlas") {
                             for (let j in that.nodeData) {
                                 if (that.nodeData[j]["_name"] && that.nodeData[j]["_name"] == data[i]["_name"]) {
-                                    let uuid = decodeUuid(that.createLibrary(j, key))
+                                    let uuid = decode_uuid(that.createLibrary(j, key))
                                     that.ttfMap.set(uuid, data[i])
                                 }
                             }
@@ -314,7 +314,7 @@ export default new class {
                                 let uuid = ""
                                 for (let j in that.nodeData) {
                                     if (that.nodeData[j]["_name"] && that.nodeData[j]["_name"] == data[i]["_name"]) {
-                                        uuid = decodeUuid(that.createLibrary(j, key))
+                                        uuid = decode_uuid(that.createLibrary(j, key))
                                         let filename = name + data[i]["_native"]
                                         let metaData = {
                                             "ver": "1.0.1",
@@ -325,11 +325,11 @@ export default new class {
                                         if (that.fileMap.has(uuid)) {
                                             let currPath = that.fileMap.get(uuid)
                                             let writePath = String.raw`${name}${path.extname(currPath)}`
-                                            if (that.cacheWriteList.includes(`./project/assets/Texture/${writePath}`)) {
+                                            if (that.cacheWriteList.includes(`${global.paths.output}/assets/Texture/${writePath}`)) {
                                                 writePath = name + `_${count++}` + path.extname(currPath)
                                             }
                                             that.cacheReadList.push(currPath)
-                                            that.cacheWriteList.push(`./project/assets/${_mkdir}/${writePath}`)
+                                            that.cacheWriteList.push(`${global.paths.output}/assets/${_mkdir}/${writePath}`)
                                             that.fileMap.delete(uuid)
                                         }
                                     }
@@ -340,7 +340,7 @@ export default new class {
                                 that.writeFile(_mkdir, filename, JSON.parse(data[i]["_dragonBonesJson"]))
                                 for (let j in that.nodeData) {
                                     if (that.nodeData[j]["_name"] && that.nodeData[j]["_name"] == data[i]["_name"]) {
-                                        let uuid = decodeUuid(that.createLibrary(j, key))
+                                        let uuid = decode_uuid(that.createLibrary(j, key))
                                         let metaData = {
                                             "ver": "1.0.1",
                                             "uuid": uuid,
@@ -360,7 +360,7 @@ export default new class {
                             that.writeFile(_mkdir, filename, JSON.parse(data[i]["_atlasJson"]))
                             for (let j in that.nodeData) {
                                 if (that.nodeData[j]["_name"] && that.nodeData[j]["_name"] == data[i]["_name"]) {
-                                    let uuid = decodeUuid(that.createLibrary(j, key))
+                                    let uuid = decode_uuid(that.createLibrary(j, key))
                                     let metaData = {
                                         "ver": "1.0.1",
                                         "uuid": uuid,
@@ -369,14 +369,14 @@ export default new class {
                                     that.writeFile(_mkdir, filename + ".meta", metaData)
                                 }
                             }
-                            if (that.fileMap.has(decodeUuid(data[i]["_texture"]["__uuid__"]))) {
-                                let currPath = that.fileMap.get(decodeUuid(data[i]["_texture"]["__uuid__"]))
+                            if (that.fileMap.has(decode_uuid(data[i]["_texture"]["__uuid__"]))) {
+                                let currPath = that.fileMap.get(decode_uuid(data[i]["_texture"]["__uuid__"]))
                                 let writePath = String.raw`${name}${path.extname(currPath)}`
-                                if (that.cacheWriteList.includes(`./project/assets/Texture/${writePath}`)) {
+                                if (that.cacheWriteList.includes(`${global.paths.output}/assets/Texture/${writePath}`)) {
                                     writePath = name + `_${count++}` + path.extname(currPath)
                                 }
                                 that.cacheReadList.push(currPath)
-                                that.cacheWriteList.push(`./project/assets/${_mkdir}/${writePath}`)
+                                that.cacheWriteList.push(`${global.paths.output}/assets/${_mkdir}/${writePath}`)
                                 let sprite = {
                                     "__type__": "cc.SpriteFrame",
                                     "content": {
@@ -391,8 +391,8 @@ export default new class {
                                 let pictureWidth = sizeOf(currPath).width
                                 let pictureHeight = sizeOf(currPath).height
                                 let fileName = writePath
-                                that.convertToPictureFile(sprite, decodeUuid(stringRandom(22)), fileName, pictureWidth, pictureHeight, _mkdir)
-                                that.fileMap.delete(decodeUuid(data[i]["_texture"]["__uuid__"]))
+                                that.convertToPictureFile(sprite, decode_uuid(stringRandom(22)), fileName, pictureWidth, pictureHeight, _mkdir)
+                                that.fileMap.delete(decode_uuid(data[i]["_texture"]["__uuid__"]))
                             }
                         }
                         //粒子资源                       
@@ -403,7 +403,7 @@ export default new class {
                             let _mkdir = "Picture"
                             for (let j in that.nodeData) {
                                 if (that.nodeData[j]["_name"] == name) {
-                                    let texture = decodeUuid(that.createLibrary(j, key))
+                                    let texture = decode_uuid(that.createLibrary(j, key))
                                     that.spriteAtlasMap.set(texture, data[i])
                                     let metaData = {
                                         "ver": "1.0.1",
@@ -420,7 +420,7 @@ export default new class {
                             let name = data[i]["_name"]
                             for (let j in that.nodeData) {
                                 if (that.nodeData[j]["_name"] == name) {
-                                    let texture = decodeUuid(that.createLibrary(j, key))
+                                    let texture = decode_uuid(that.createLibrary(j, key))
                                     that.spriteAtlasMap.set(texture, data[i])
                                 }
                             }
@@ -432,7 +432,7 @@ export default new class {
                             for (let j in that.nodeData) {
                                 //确保同名和uuid相同
                                 if (that.nodeData[j]["content"] && that.nodeData[j]["content"]["texture"] == data[i]["content"]["texture"] && that.nodeData[j]["content"]["name"] == data[i]["content"]["name"]) {
-                                    uuid = decodeUuid(that.createLibrary(j, key))
+                                    uuid = decode_uuid(that.createLibrary(j, key))
                                     that.spriteFramesMap.set(uuid, data[i])
                                     temp.set(uuid, data[i])
                                     if (that.pictureMap.has(texture)) {
@@ -460,7 +460,7 @@ export default new class {
                     reveal(jsonObject[key]);
                 }
                 if (key == "__uuid__" && jsonObject[key]) {
-                    jsonObject[key] = decodeUuid(jsonObject[key])
+                    jsonObject[key] = decode_uuid(jsonObject[key])
                 }
             }
             return jsonObject
@@ -468,14 +468,14 @@ export default new class {
     }
 
     createLibrary(index: string, key: string) {
-        if (global.Settings == "{}") {
+        if (global.settings == "{}") {
             return
         }
-        for (let key1 in global.Settings["packedAssets"]) {
+        for (let key1 in global.settings["packedAssets"]) {
             if (key == key1) {
-                let result = global.Settings["packedAssets"][key][index]
-                if (typeof global.Settings["packedAssets"][key][index] == "number") {
-                    return global.Settings["uuids"][result]
+                let result = global.settings["packedAssets"][key][index]
+                if (typeof global.settings["packedAssets"][key][index] == "number") {
+                    return global.settings["uuids"][result]
                 } else {
                     return result
                 }
@@ -518,7 +518,7 @@ export default new class {
         let pictureSubMetas: any = {}
         pictureSubMetas[pictureName] = {
             "ver": "1.0.4",
-            "uuid": decodeUuid(stringRandom(22)),
+            "uuid": decode_uuid(stringRandom(22)),
             "rawTextureUuid": _uuid,
             "trimType": "auto",
             "trimThreshold": 1,
@@ -606,7 +606,7 @@ export default new class {
 
         this.writeFile("Picture", filename.split(".")[0] + ".json", plistJson)
         this.writeFile("Picture", filename.split(".")[0] + '.plist' + ".meta", _spriteMap)
-        let fileName = String.raw`./project/assets/Picture/${filename.split(".")[0]}`
+        let fileName = String.raw`${global.paths.output}/assets/Picture/${filename.split(".")[0]}`
         json2plist.readJson(fileName)
         fs.unlinkSync(fileName + '.json')
     }
@@ -618,7 +618,7 @@ export default new class {
         _subMetas[name] = {
             "ver": "1.0.4",
             "uuid": uuid,
-            "rawTextureUuid": decodeUuid(sprite["content"]["texture"]),
+            "rawTextureUuid": decode_uuid(sprite["content"]["texture"]),
             "trimType": "auto",
             "trimThreshold": 1,
             "rotated": false,
@@ -639,7 +639,7 @@ export default new class {
         }
         let _spriteMap = {
             "ver": "2.3.4",
-            "uuid": decodeUuid(sprite["content"]["texture"]),
+            "uuid": decode_uuid(sprite["content"]["texture"]),
             "type": "sprite",
             "wrapMode": "clamp",
             "filterMode": "bilinear",
@@ -668,18 +668,18 @@ export default new class {
                     let filename = spriteAtla["_name"]
                     let currPath = this.fileMap.get(texture)
                     let writePath = String.raw`${filename}${path.extname(currPath)}`
-                    if (this.cacheWriteList.includes(`./project/assets/Picture/${writePath}`)) {
+                    if (this.cacheWriteList.includes(`${global.paths.output}/assets/Picture/${writePath}`)) {
                         writePath = filename + `_${count++}` + path.extname(currPath)
                     }
                     this.cacheReadList.push(currPath)
-                    this.cacheWriteList.push(`./project/assets/Picture/${writePath}`)
+                    this.cacheWriteList.push(`${global.paths.output}/assets/Picture/${writePath}`)
                 }
             }
             for (let key in spriteAtla['_spriteFrames']) {
                 let _uuid = spriteAtla['_spriteFrames'][key]["__uuid__"]
                 if (this.spriteFramesMap.has(_uuid)) {
                     let sprite = this.spriteFramesMap.get(_uuid)
-                    let atlasUuid = decodeUuid(sprite["content"]["texture"])
+                    let atlasUuid = decode_uuid(sprite["content"]["texture"])
                     let data = {
                         "texture": texture,
                         "atlas": spriteAtla["_name"]
@@ -689,7 +689,7 @@ export default new class {
             }
         })
         this.pictureMap.forEach((value, key) => {
-            let texture = decodeUuid(key)
+            let texture = decode_uuid(key)
             if (this.fileMap.has(texture)) {
                 let currPath = this.fileMap.get(texture)
                 if (value.size > 1) {
@@ -699,7 +699,7 @@ export default new class {
                     let plistHeight = sizeOf(currPath).height
                     value.forEach((res: any, uuid: string) => {
                         let subMeta: any = {}
-                        let _uuid = decodeUuid(stringRandom(22))
+                        let _uuid = decode_uuid(stringRandom(22))
                         if (temp.has(texture)) {
                             _uuid = temp.get(texture)["texture"]
                             filename = temp.get(texture)["atlas"]
@@ -710,12 +710,12 @@ export default new class {
                         subMetas.push(subMeta)
                     })
                     let writePath = String.raw`${filename.split(".")[0]}${path.extname(currPath)}`
-                    if (this.cacheWriteList.includes(`./project/assets/Picture/${writePath}`)) {
+                    if (this.cacheWriteList.includes(`${global.paths.output}/assets/Picture/${writePath}`)) {
                         writePath = filename.split('.')[0] + `_${count++}` + path.extname(currPath)
                     }
                     filename = writePath
                     this.cacheReadList.push(currPath)
-                    this.cacheWriteList.push(`./project/assets/Picture/${writePath}`)
+                    this.cacheWriteList.push(`${global.paths.output}/assets/Picture/${writePath}`)
                     this.convertToSpriteAtlaFile(subMetas, filename, texture, plistWidth, plistHeight)
                 }
                 if (value.size == 1) {
@@ -723,14 +723,14 @@ export default new class {
                         let name = res["content"]["name"]
                         if (name.split('_')[0] != "default") {
                             let writePath = name + path.extname(currPath)
-                            if (this.cacheWriteList.includes(`./project/assets/Picture/${writePath}`)) {
+                            if (this.cacheWriteList.includes(`${global.paths.output}/assets/Picture/${writePath}`)) {
                                 writePath = name.split('.')[0] + `_${count++}` + path.extname(currPath)
                             }
                             let fileName = writePath
                             let pictureWidth = sizeOf(currPath).width
                             let pictureHeight = sizeOf(currPath).height
                             this.cacheReadList.push(currPath)
-                            this.cacheWriteList.push(String.raw`./project/assets/Picture/${fileName}`)
+                            this.cacheWriteList.push(String.raw`${global.paths.output}/assets/Picture/${fileName}`)
                             this.convertToPictureFile(res, uuid, fileName, pictureWidth, pictureHeight)
                         }
                     })
@@ -744,14 +744,14 @@ export default new class {
                 let name = key
                 let currPath = file
                 let writePath = name + path.extname(currPath)
-                if (this.cacheWriteList.includes(`./project/assets/Picture/${writePath}`)) {
+                if (this.cacheWriteList.includes(`${global.paths.output}/assets/Picture/${writePath}`)) {
                     writePath = name.split('.')[0] + `_${count++}` + path.extname(currPath)
                 }
                 let fileName = writePath
                 let pictureWidth = sizeOf(currPath).width
                 let pictureHeight = sizeOf(currPath).height
                 this.cacheReadList.push(currPath)
-                this.cacheWriteList.push(String.raw`./project/assets/Picture/${fileName}`)
+                this.cacheWriteList.push(String.raw`${global.paths.output}/assets/Picture/${fileName}`)
                 let sprite = {
                     "__type__": "cc.SpriteFrame",
                     "content": {
@@ -785,20 +785,20 @@ export default new class {
                     res = JSON.parse(JSON.stringify(res))
                     //console.log(res)
                     try {
-                        fs.mkdirSync(String.raw`./project/assets/Fonts`, { recursive: true });
-                        fs.appendFileSync(String.raw`./project/assets/Fonts/${value["_name"] + ".fnt"}`, res, {
+                        fs.mkdirSync(String.raw`${global.paths.output}/assets/Fonts`, { recursive: true });
+                        fs.appendFileSync(String.raw`${global.paths.output}/assets/Fonts/${value["_name"] + ".fnt"}`, res, {
                             encoding: "utf-8",
                             flag: "w+"
                         });
                     } catch (error) {
                         console.log(error)
                     }
-                    let uuid = decodeUuid(value["spriteFrame"]["__uuid__"])
+                    let uuid = decode_uuid(value["spriteFrame"]["__uuid__"])
                     if (this.spriteFramesMap.has(uuid)) {
                         let meta = {
                             "ver": "2.1.0",
                             "uuid": key,
-                            "textureUuid": decodeUuid(this.spriteFramesMap.get(uuid)["content"]["texture"]),
+                            "textureUuid": decode_uuid(this.spriteFramesMap.get(uuid)["content"]["texture"]),
                             "fontSize": 36,
                             "subMetas": {}
                         }
@@ -814,10 +814,11 @@ export default new class {
     /**
      * @Description: 生成meta文件
      */
-    convertToMetaFile(fileMap: any) {
-        for (let name in fileMap) {
+    convertToMetaFile(fileMap: Map<string, string>) {
+
+        for (let [key, value] of fileMap) {
             let _mkdir = ""
-            let filename = name
+            let filename = key
             if (path.extname(filename) === ".fire") {
                 _mkdir = "Scene"
             }
@@ -834,7 +835,7 @@ export default new class {
                 _mkdir = "Audio"
                 let metaData = {
                     "ver": "2.0.0",
-                    "uuid": fileMap[name],
+                    "uuid": value,
                     "downloadMode": 0,
                     "subMetas": {}
                 }
@@ -843,7 +844,7 @@ export default new class {
             }
             let metaData = {
                 "ver": "1.2.7",
-                "uuid": fileMap[name],
+                "uuid": value,
                 "optimizationPolicy": "AUTO",
                 "asyncLoadAssets": false,
                 "readonly": false,
@@ -862,8 +863,8 @@ export default new class {
     writeFile(_mkdir: string, filename: string, data: any) {
 
         try {
-            fs.mkdirSync(String.raw`./project/assets/${_mkdir}`, { recursive: true })
-            fs.appendFileSync(String.raw`./project/assets/${_mkdir}/${filename}`, JSON.stringify(data), {
+            fs.mkdirSync(String.raw`${global.paths.output}/assets/${_mkdir}`, { recursive: true })
+            fs.appendFileSync(String.raw`${global.paths.output}/assets/${_mkdir}/${filename}`, JSON.stringify(data), {
                 encoding: "utf-8",
                 flag: "w+"
             });

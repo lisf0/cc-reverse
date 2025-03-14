@@ -5,13 +5,12 @@ import { parse, traverse, types } from "@babel/core";
 import generator from "@babel/generator";
 import * as fs from "fs";
 import path from "path";
-import { original_uuid } from "./_uuid";
-import { decodeUuid } from "./decode";
 import tools from "./tools";
+import { decode_uuid, original_uuid } from "./uuid-utils";
 
 export default new class {
 
-    async splitCompile(code: string) {
+    async compile(code: string) {
         // 1.parse
         const ast = parse(code);
 
@@ -68,7 +67,7 @@ export default new class {
                                                         let filename = a.arguments[2].value.split('.')[0] + ".ts"
 
                                                         let fileMap = new Map()
-                                                        fileMap.set(filename, decodeUuid(original_uuid(a.arguments[1].value)))
+                                                        fileMap.set(filename, decode_uuid(original_uuid(a.arguments[1].value)))
                                                         tools.convertToMetaFile(fileMap)
                                                     }
                                                 }
@@ -80,7 +79,7 @@ export default new class {
                                             if (i.expression.arguments[1].type && i.expression.arguments[1].type == "StringLiteral" && i.expression.arguments[1].value != "__esModule") {
                                                 let filename = i.expression.arguments[2].value.split('.')[0] + ".ts"
                                                 let fileMap = new Map()
-                                                fileMap.set(filename, decodeUuid(original_uuid(i.expression.arguments[1].value)))
+                                                fileMap.set(filename, decode_uuid(original_uuid(i.expression.arguments[1].value)))
                                                 tools.convertToMetaFile(fileMap)
                                             }
                                         }
@@ -176,8 +175,8 @@ export default new class {
                             try {
 
                                 let str = JSON.stringify(node.value.elements[0].body)
-                                fs.mkdirSync(global.filePath, { recursive: true })
-                                fs.appendFileSync(`${global.filePath}/${value}.json`, str, {
+                                fs.mkdirSync(global.paths.ast, { recursive: true })
+                                fs.appendFileSync(`${global.paths.ast}/${value}.json`, str, {
                                     flag: 'w+'
                                 });
 
@@ -190,21 +189,21 @@ export default new class {
             }
         };
 
-        traverse(ast, findValue);
-        traverse(ast, splitVisitor);
+        await traverse(ast, findValue);
+        await traverse(ast, splitVisitor);
     }
 
-    generatorCode(ast: any, filename: string) {
-        let res = generator(ast, {})["code"]
-        fs.mkdirSync(`./project/assets/Scripts`, { recursive: true })
-        fs.appendFile(`./project/assets/Scripts/${filename}.ts`, JSON.parse(JSON.stringify(res.slice(1, res.length - 1))), {
-            encoding: "utf-8",
-            flag: "w+",
-        }, (err) => {
+    generate(ast: any, filename: string) {
+        const ret = generator(ast, {});
+        const code = ret["code"];
+        const filePath = `${global.paths.output}/assets/Scripts/${filename}.ts`;
+        const appendContent = JSON.parse(JSON.stringify(code.slice(1, code.length - 1)));
+        fs.appendFile(filePath, appendContent, { encoding: "utf-8", flag: "w+", }, (err) => {
             if (err) {
                 console.log(err)
             }
-        })
-        return generator(ast, {})
+        });
+
+        return ret;
     }
 }

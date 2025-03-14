@@ -1,9 +1,11 @@
 // global.d.ts
 declare module global {
-    var buildPath: string;
-    var filePath: string;
-    var currPath: string;
-    var Settings: any;
+    var paths: {
+        ast: string;
+        res: string;
+        output: string;
+    }
+    var settings: any;
 }
 
 declare module 'xml-writer' {

@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import path from "path";
 import stringRandom from "string-random";
-import { decodeUuid } from "./decode";
+import { decode_uuid } from "./uuid-utils";
 
 /*
  * @Date: 2021-02-25 11:32:54
@@ -10,7 +10,7 @@ import { decodeUuid } from "./decode";
 // const decodeUuid = require("./decode");
 
 const _name = "project"
-const id = decodeUuid(stringRandom(22))
+const id = decode_uuid(stringRandom(22))
 const project = {
     "engine": "cocos-creator-js",
     "packages": "packages",
@@ -88,16 +88,14 @@ const settings_project = {
 
 export class Conf {
     static init() {
-        settings_project["group-list"] = global.Settings["groupList"]
-        settings_project["collision-matrix"] = global.Settings["collisionMatrix"]
-        settings_project["start-scene"] = path.basename(global.Settings["launchScene"]).split(".")[0]
-        fs.mkdirSync("./project/settings", {
-            recursive: true
-        })
-        fs.appendFileSync("./project/settings/project.json", JSON.stringify(settings_project))
-        fs.writeFileSync("./project/project.json", JSON.stringify(project))
-        fs.writeFileSync("./project/jsconfig.json", JSON.stringify(jsconfig))
-        fs.writeFileSync("./project/tsconfig.json", JSON.stringify(tsconfig))
+        settings_project["group-list"] = global.settings["groupList"]
+        settings_project["collision-matrix"] = global.settings["collisionMatrix"]
+        settings_project["start-scene"] = path.basename(global.settings["launchScene"]).split(".")[0]
+        fs.mkdirSync(`${global.paths.output}/settings`, { recursive: true })
+        fs.appendFileSync(`${global.paths.output}/settings/project.json`, JSON.stringify(settings_project))
+        fs.writeFileSync(`${global.paths.output}/project.json`, JSON.stringify(project))
+        fs.writeFileSync(`${global.paths.output}/jsconfig.json`, JSON.stringify(jsconfig))
+        fs.writeFileSync(`${global.paths.output}/tsconfig.json`, JSON.stringify(tsconfig))
     }
 
 }
